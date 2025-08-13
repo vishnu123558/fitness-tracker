@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker - Custom Goals & Progress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+        }
+
+        .goals-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .goal-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .goals-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .goal-item {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .goal-info h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .goal-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .activity-tracker {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .activity-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .activity-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .activity-info h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .activity-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sensor-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .sensor-card {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .sensor-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .sensor-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .insights-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .insight-item {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .insight-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .insight-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .goal-form, .activity-form {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-dumbbell"></i> Fitness Tracker</h1>
+            <p>Track your fitness goals and monitor your progress</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>Today's Summary</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stepsToday">0</div>
+                        <div class="stat-label">Steps</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="stepsProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="caloriesToday">0</div>
+                        <div class="stat-label">Calories</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="caloriesProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeMinutes">0</div>
+                        <div class="stat-label">Active Minutes</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="activeProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="distanceToday">0</div>
+                        <div class="stat-label">Distance (km)</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="distanceProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Weekly Progress</h3>
+                <canvas id="weeklyChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="goals-section">
+            <h3>Custom Fitness Goals</h3>
+            <form class="goal-form" id="goalForm">
+                <div class="form-group">
+                    <label for="goalType">Goal Type</label>
+                    <select id="goalType" required>
+                        <option value="">Select Goal</option>
+                        <option value="steps">Daily Steps</option>
+                        <option value="calories">Daily Calories</option>
+                        <option value="activeMinutes">Active Minutes</option>
+                        <option value="distance">Distance</option>
+                        <option value="weight">Weight Loss</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="goalTarget">Target Value</label>
+                    <input type="number" id="goalTarget" placeholder="Enter target" required>
+                </div>
+                <div class="form-group">
+                    <label for="goalDeadline">Deadline</label>
+                    <input type="date" id="goalDeadline" required>
+                </div>
+                <button type="submit" class="btn">Add Goal</button>
+            </form>
+            <div class="goals-list" id="goalsList"></div>
+        </div>
+
+        <div class="activity-tracker">
+            <h3>Activity Tracker</h3>
+            <form class="activity-form" id="activityForm">
+                <div class="form-group">
+                    <label for="activityType">Activity Type</label>
+                    <select id="activityType" required>
+                        <option value="">Select Activity</option>
+                        <option value="walking">Walking</option>
+                        <option value="running">Running</option>
+                        <option value="cycling">Cycling</option>
+                        <option value="swimming">Swimming</option>
+                        <option value="gym">Gym Workout</option>
+                        <option value="yoga">Yoga</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="activityDuration">Duration (minutes)</label>
+                    <input type="number" id="activityDuration" placeholder="Duration" required>
+                </div>
+                <div class="form-group">
+                    <label for="activityIntensity">Intensity</label>
+                    <select id="activityIntensity" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Log Activity</button>
+            </form>
+            <div class="activity-list" id="activityList"></div>
+        </div>
+
+        <div class="sensor-section">
+            <h3>Sensor Data</h3>
+            <div class="sensor-grid">
+                <div class="sensor-card">
+                    <div class="sensor-value" id="heartRate">--</div>
+                    <div class="sensor-label">Heart Rate (BPM)</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-value" id="sleepHours">--</div>
+                    <div class="sensor-label">Sleep Hours</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-value" id="waterIntake">--</div>
+                    <div class="sensor-label">Water Intake (L)</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-value" id="bodyWeight">--</div>
+                    <div class="sensor-label">Body Weight (kg)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-title">Monthly Progress</div>
+                <canvas id="monthlyChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Goal Achievement</div>
+                <canvas id="goalChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="insights-section">
+            <h3>Fitness Insights</h3>
+            <div id="insightsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Fitness Tracker Class
+        class FitnessTracker {
+            constructor() {
+                this.goals = JSON.parse(localStorage.getItem('fitnessGoals')) || [];
+                this.activities = JSON.parse(localStorage.getItem('fitnessActivities')) || [];
+                this.sensorData = JSON.parse(localStorage.getItem('sensorData')) || this.getDefaultSensorData();
+                this.todayStats = this.getTodayStats();
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateDashboard();
+                this.renderGoals();
+                this.renderActivities();
+                this.updateSensorData();
+                this.createCharts();
+                this.generateInsights();
+                this.startSensorSimulation();
+            }
+
+            // Setup event listeners
+            setupEventListeners() {
+                document.getElementById('goalForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addGoal();
+                });
+
+                document.getElementById('activityForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.logActivity();
+                });
+            }
+
+            // Add new fitness goal
+            addGoal() {
+                const goalType = document.getElementById('goalType').value;
+                const target = parseFloat(document.getElementById('goalTarget').value);
+                const deadline = document.getElementById('goalDeadline').value;
+
+                if (!goalType || !target || !deadline) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                const goal = {
+                    id: Date.now(),
+                    type: goalType,
+                    target: target,
+                    current: 0,
+                    deadline: deadline,
+                    createdAt: new Date().toISOString(),
+                    completed: false
+                };
+
+                this.goals.push(goal);
+                this.saveGoals();
+                this.renderGoals();
+                this.updateCharts();
+                this.generateInsights();
+
+                // Reset form
+                document.getElementById('goalForm').reset();
+            }
+
+            // Log activity
+            logActivity() {
+                const type = document.getElementById('activityType').value;
+                const duration = parseInt(document.getElementById('activityDuration').value);
+                const intensity = document.getElementById('activityIntensity').value;
+
+                if (!type || !duration) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                const activity = {
+                    id: Date.now(),
+                    type: type,
+                    duration: duration,
+                    intensity: intensity,
+                    timestamp: new Date().toISOString(),
+                    calories: this.calculateCalories(type, duration, intensity),
+                    steps: this.calculateSteps(type, duration, intensity)
+                };
+
+                this.activities.push(activity);
+                this.saveActivities();
+                this.renderActivities();
+                this.updateTodayStats(activity);
+                this.updateDashboard();
+                this.updateCharts();
+                this.generateInsights();
+
+                // Reset form
+                document.getElementById('activityForm').reset();
+            }
+
+            // Calculate calories burned
+            calculateCalories(activityType, duration, intensity) {
+                const intensityMultiplier = {
+                    'low': 3,
+                    'medium': 5,
+                    'high': 8
+                };
+
+                const baseCalories = {
+                    'walking': 4,
+                    'running': 10,
+                    'cycling': 8,
+                    'swimming': 7,
+                    'gym': 6,
+                    'yoga': 3
+                };
+
+                return Math.round(baseCalories[activityType] * duration * intensityMultiplier[intensity]);
+            }
+
+            // Calculate steps
+            calculateSteps(activityType, duration, intensity) {
+                const stepsPerMinute = {
+                    'walking': 100,
+                    'running': 150,
+                    'cycling': 0,
+                    'swimming': 0,
+                    'gym': 50,
+                    'yoga': 20
+                };
+
+                return Math.round(stepsPerMinute[activityType] * duration);
+            }
+
+            // Update today's stats
+            updateTodayStats(activity) {
+                this.todayStats.steps += activity.steps;
+                this.todayStats.calories += activity.calories;
+                this.todayStats.activeMinutes += activity.duration;
+                this.todayStats.distance += this.calculateDistance(activity);
+
+                localStorage.setItem('todayStats', JSON.stringify(this.todayStats));
+            }
+
+            // Calculate distance
+            calculateDistance(activity) {
+                const distancePerMinute = {
+                    'walking': 0.08, // km
+                    'running': 0.15,
+                    'cycling': 0.25,
+                    'swimming': 0.05,
+                    'gym': 0,
+                    'yoga': 0
+                };
+
+                return distancePerMinute[activity.type] * activity.duration;
+            }
+
+            // Get today's stats
+            getTodayStats() {
+                const saved = localStorage.getItem('todayStats');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return {
+                    steps: 0,
+                    calories: 0,
+                    activeMinutes: 0,
+                    distance: 0
+                };
+            }
+
+            // Update dashboard
+            updateDashboard() {
+                document.getElementById('stepsToday').textContent = this.todayStats.steps.toLocaleString();
+                document.getElementById('caloriesToday').textContent = this.todayStats.calories.toLocaleString();
+                document.getElementById('activeMinutes').textContent = this.todayStats.activeMinutes;
+                document.getElementById('distanceToday').textContent = this.todayStats.distance.toFixed(1);
+
+                // Update progress bars
+                this.updateProgressBar('stepsProgress', this.todayStats.steps, 10000);
+                this.updateProgressBar('caloriesProgress', this.todayStats.calories, 2000);
+                this.updateProgressBar('activeProgress', this.todayStats.activeMinutes, 60);
+                this.updateProgressBar('distanceProgress', this.todayStats.distance, 5);
+            }
+
+            // Update progress bar
+            updateProgressBar(elementId, current, target) {
+                const progress = Math.min((current / target) * 100, 100);
+                document.getElementById(elementId).style.width = progress + '%';
+            }
+
+            // Render goals
+            renderGoals() {
+                const goalsList = document.getElementById('goalsList');
+                goalsList.innerHTML = '';
+
+                this.goals.forEach(goal => {
+                    const progress = Math.min((goal.current / goal.target) * 100, 100);
+                    const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+
+                    const goalElement = document.createElement('div');
+                    goalElement.className = 'goal-item';
+                    goalElement.innerHTML = `
+                        <div class="goal-info">
+                            <h4>${this.capitalizeFirst(goal.type)} Goal</h4>
+                            <p>${goal.current} / ${goal.target} (${progress.toFixed(1)}%) - ${daysLeft} days left</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="fitnessTracker.deleteGoal(${goal.id})">Delete</button>
+                    `;
+                    goalsList.appendChild(goalElement);
+                });
+            }
+
+            // Render activities
+            renderActivities() {
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = '';
+
+                this.activities.slice(-5).reverse().forEach(activity => {
+                    const activityElement = document.createElement('div');
+                    activityElement.className = 'activity-item';
+                    activityElement.innerHTML = `
+                        <div class="activity-info">
+                            <h4>${this.capitalizeFirst(activity.type)}</h4>
+                            <p>${activity.duration} minutes - ${activity.intensity} intensity - ${activity.calories} calories</p>
+                        </div>
+                        <span>${new Date(activity.timestamp).toLocaleDateString()}</span>
+                    `;
+                    activityList.appendChild(activityElement);
+                });
+            }
+
+            // Update sensor data
+            updateSensorData() {
+                document.getElementById('heartRate').textContent = this.sensorData.heartRate;
+                document.getElementById('sleepHours').textContent = this.sensorData.sleepHours;
+                document.getElementById('waterIntake').textContent = this.sensorData.waterIntake;
+                document.getElementById('bodyWeight').textContent = this.sensorData.bodyWeight;
+            }
+
+            // Get default sensor data
+            getDefaultSensorData() {
+                return {
+                    heartRate: 72,
+                    sleepHours: 7.5,
+                    waterIntake: 2.1,
+                    bodyWeight: 70.5
+                };
+            }
+
+            // Start sensor simulation
+            startSensorSimulation() {
+                setInterval(() => {
+                    // Simulate heart rate changes
+                    this.sensorData.heartRate += Math.floor(Math.random() * 6) - 3;
+                    this.sensorData.heartRate = Math.max(60, Math.min(100, this.sensorData.heartRate));
+
+                    // Simulate water intake
+                    if (Math.random() < 0.1) {
+                        this.sensorData.waterIntake += 0.1;
+                    }
+
+                    this.updateSensorData();
+                    localStorage.setItem('sensorData', JSON.stringify(this.sensorData));
+                }, 5000);
+            }
+
+            // Create charts
+            createCharts() {
+                this.createWeeklyChart();
+                this.createMonthlyChart();
+                this.createGoalChart();
+            }
+
+            // Create weekly chart
+            createWeeklyChart() {
+                const ctx = document.getElementById('weeklyChart').getContext('2d');
+                const weekData = this.getWeekData();
+
+                this.charts.weekly = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: weekData.labels,
+                        datasets: [{
+                            label: 'Steps',
+                            data: weekData.steps,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create monthly chart
+            createMonthlyChart() {
+                const ctx = document.getElementById('monthlyChart').getContext('2d');
+                const monthData = this.getMonthData();
+
+                this.charts.monthly = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: monthData.labels,
+                        datasets: [{
+                            label: 'Calories',
+                            data: monthData.calories,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create goal chart
+            createGoalChart() {
+                const ctx = document.getElementById('goalChart').getContext('2d');
+                const goalData = this.getGoalData();
+
+                this.charts.goal = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: goalData.labels,
+                        datasets: [{
+                            data: goalData.data,
+                            backgroundColor: [
+                                '#667eea',
+                                '#764ba2',
+                                '#ff6b6b',
+                                '#4ecdc4',
+                                '#45b7d1'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Get week data
+            getWeekData() {
+                const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const steps = [8000, 12000, 9500, 11000, 13500, 7000, 9000];
+                return { labels, steps };
+            }
+
+            // Get month data
+            getMonthData() {
+                const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                const calories = [12000, 15000, 13500, 18000];
+                return { labels, calories };
+            }
+
+            // Get goal data
+            getGoalData() {
+                const completed = this.goals.filter(g => g.completed).length;
+                const inProgress = this.goals.filter(g => !g.completed).length;
+                return {
+                    labels: ['Completed', 'In Progress'],
+                    data: [completed, inProgress]
+                };
+            }
+
+            // Update charts
+            updateCharts() {
+                if (this.charts.weekly) {
+                    this.charts.weekly.destroy();
+                }
+                if (this.charts.monthly) {
+                    this.charts.monthly.destroy();
+                }
+                if (this.charts.goal) {
+                    this.charts.goal.destroy();
+                }
+                this.createCharts();
+            }
+
+            // Generate insights
+            generateInsights() {
+                const insightsList = document.getElementById('insightsList');
+                insightsList.innerHTML = '';
+
+                const insights = this.analyzeData();
+                insights.forEach(insight => {
+                    const insightElement = document.createElement('div');
+                    insightElement.className = 'insight-item';
+                    insightElement.innerHTML = `
+                        <div class="insight-title">${insight.title}</div>
+                        <div class="insight-description">${insight.description}</div>
+                    `;
+                    insightsList.appendChild(insightElement);
+                });
+            }
+
+            // Analyze data for insights
+            analyzeData() {
+                const insights = [];
+
+                // Steps analysis
+                if (this.todayStats.steps < 8000) {
+                    insights.push({
+                        title: 'Step Goal Alert',
+                        description: 'You\'re below the recommended 10,000 steps. Try taking a walk or using stairs instead of elevators.'
+                    });
+                } else {
+                    insights.push({
+                        title: 'Great Job!',
+                        description: 'You\'ve exceeded your daily step goal. Keep up the excellent work!'
+                    });
+                }
+
+                // Activity analysis
+                if (this.todayStats.activeMinutes < 30) {
+                    insights.push({
+                        title: 'Activity Reminder',
+                        description: 'Aim for at least 30 minutes of moderate activity daily for optimal health.'
+                    });
+                }
+
+                // Goal progress
+                const activeGoals = this.goals.filter(g => !g.completed);
+                if (activeGoals.length > 0) {
+                    const closestGoal = activeGoals.reduce((closest, goal) => {
+                        const progress = (goal.current / goal.target) * 100;
+                        const closestProgress = (closest.current / closest.target) * 100;
+                        return progress > closestProgress ? goal : closest;
+                    });
+
+                    insights.push({
+                        title: 'Goal Progress',
+                        description: `Your ${closestGoal.type} goal is ${((closestGoal.current / closestGoal.target) * 100).toFixed(1)}% complete.`
+                    });
+                }
+
+                return insights;
+            }
+
+            // Delete goal
+            deleteGoal(goalId) {
+                this.goals = this.goals.filter(g => g.id !== goalId);
+                this.saveGoals();
+                this.renderGoals();
+                this.updateCharts();
+                this.generateInsights();
+            }
+
+            // Save goals
+            saveGoals() {
+                localStorage.setItem('fitnessGoals', JSON.stringify(this.goals));
+            }
+
+            // Save activities
+            saveActivities() {
+                localStorage.setItem('fitnessActivities', JSON.stringify(this.activities));
+            }
+
+            // Utility function
+            capitalizeFirst(str) {
+                return str.charAt(0).toUpperCase() + str.slice(1);
+            }
+        }
+
+        // Initialize fitness tracker
+        const fitnessTracker = new FitnessTracker();
+    </script>
+</body>
+</html> 
